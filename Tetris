@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> 
+  <title>Tetris</title>
+  <style>
+    body {
+  background-color: #c4d6a7;
+  font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
+}
+
+.labels {
+  margin: auto;
+  margin-top: 10px;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: bold;
+  color: #303a21;
+  word-wrap: break-word;
+  margin-bottom: 50px;
+}
+
+.frame {
+  margin: auto;
+  padding: 5px 0px;
+  width: 56px;
+  border: 2px solid #303a21;
+}
+
+.btn {
+  display: block;
+  margin: auto;
+  margin-top: 10px;
+  background-color: #303a21;
+  color: #c4d6a7;
+  padding: 10px 5px;
+  text-transform: uppercase;
+  font-size: 10px;
+  border: 0px;
+  cursor: pointer;
+  border: 0px;
+}
+
+.btn-rounded {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
+
+.fa {
+  font-size: 14px;
+}
+
+.flipx {
+  transform: scaleX(-1);
+}
+
+#score {
+  margin: auto;
+  text-align: center;
+}
+
+#outer-board {
+  width: 365px;
+  margin: auto;
+}
+
+#board {
+  float: left;
+  position: relative;
+  background-color: #c4d6a7;
+  width: 280px;
+  height: 448px;
+  margin: 10px auto;
+  border: 2px solid #303a21;
+}
+
+#stats {
+  float: right;
+  position: relative;
+  background-color: #c4d6a7;
+  width: 70px;
+  height: 448px;
+  margin: 10px auto;
+  border: 2px solid #303a21;
+}
+
+#banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 100px;
+  background-color: #303a21;
+  color: #c4d6a7;
+  z-index: 2;
+  text-align: center;
+}
+
+#message {
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 23px;
+  margin: 10px;
+  margin-top: 20px;
+}
+
+#new-game {
+  font-weight: 100;
+  cursor: pointer;
+}
+
+.block,
+.empty {
+  position: absolute;
+  background-color: #c4d6a7;
+  width: 28px;
+  height: 28px;
+}
+
+.empty {
+  opacity: 0.2;
+}
+
+.inner-tile {
+  position: absolute;
+  background-color: #c4d6a7;
+  border: 4px solid #303a21;
+  width: 14px;
+  height: 14px;
+  margin: 3px;
+}
+
+.inner-inner-tile {
+  position: absolute;
+  background-color: #303a21;
+  width: 8px;
+  height: 8px;
+  margin: 3px;
+}
+  
+  </style>
+</head>
+<body>
+  <div id='outer-board'>
+    <div id='board'> 
+      <div id='banner'>
+        <div>
+          <div id='message'></div>
+          <div id='new-game'>Toque aquí para comenzar! 🎮</div>
+        </div>
+      </div>
+      <script>
+        var n=0;
+        while (n < 160) {
+          document.write("<div class='empty'><div class='inner-tile'><div class='inner-inner-tile'></div></div></div>");
+          n++;
+        }
+      </script>
+    </div>
+    <div id='stats'>
+      <div class='labels'> Puntos </div>
+      <div id='score' class='frame'> 0 </div>
+      <button class='btn btn-rounded' id="left"> 
+        <i class="fa fas fa-arrow-left"></i>
+      </button>
+      <button class='btn btn-rounded' id="right"> 
+        <i class="fa fas fa-arrow-right"></i>
+      </button>
+      <button class='btn btn-rounded' id="rotate"> 
+        <i class="fa fas fa-undo flipx"></i>
+      </button>
+      <button class='btn btn-rounded' id="down"> 
+        <i class="fa fas fa-arrow-down"></i>
+      </button>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/animatelo/dist/animatelo.min.js"></script> 
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> 
+  <script>
+$(document).ready(function() {
+  // Función para mostrar la alerta de bienvenida y términos y condiciones
+  function mostrarAlertaBienvenida() {
+    // Mostrar la alerta de bienvenida con SweetAlert2
+    Swal.fire({
+      title: '¡Bienvenido al Juego Tetris! 🎮',
+      text: 'Por favor, ingresa tu nombre y acepta los términos y condiciones del juego para continuar.',
+      icon: 'info',
+      input: 'text',
+      inputPlaceholder: 'Tu Nombre Aquí...',
+      showCancelButton: false,
+      confirmButtonText: 'Continuar',
+      allowOutsideClick: false, // Evita que el usuario cierre la alerta haciendo clic fuera de ella
+      html: `
+        <div class="titulo-terminos" data-index="0">
+          <b>TÉRMINOS Y CONDICIONES DEL JUEGO. </b>
+          <button class="btn-toggle-info">🔓</button>
+        </div>
+        <div class="contenido-terminos" style="display: none; text-align: left; margin-bottom: 20px;">
+          <p>1. Uso del Juego:</p>
+          <ul style="list-style-type: disc; margin-left: 20px;">
+            <li>El objetivo del juego es completar líneas horizontales con las piezas de Tetris, evitando que las piezas alcancen la parte superior de la pantalla.</li>
+            <li>No está permitido modificar, descompilar o hackear el código del juego.</li>
+            <li>El juego es gratuito para uso personal y no comercial. No se permite su redistribución sin autorización.</li>
+          </ul>
+          <p>2. Responsabilidades del Usuario:</p>
+          <ul style="list-style-type: disc; margin-left: 20px;">
+            <li>Al jugar, aceptas la responsabilidad de cualquier acción realizada dentro del juego.</li>
+            <li>Debes respetar a otros jugadores y evitar comportamientos abusivos o disruptivos en el chat del juego, si lo hubiera.</li>
+          </ul>
+          <p>3. Privacidad:</p>
+          <ul style="list-style-type: disc; margin-left: 20px;">
+            <li>Este juego no recopila ni almacena información personal de los usuarios.</li>
+            <li>El juego puede utilizar cookies u otras tecnologías de seguimiento para mejorar la experiencia del usuario.</li>
+          </ul>
+          <p>4. Limitación de Responsabilidad:</p>
+          <ul style="list-style-type: disc; margin-left: 20px;">
+            <li>El juego se proporciona "tal cual" sin garantía de ningún tipo, ya sea expresa o implícita.</li>
+            <li>El desarrollador del juego no será responsable de ningún daño directo, indirecto, incidental, especial o consecuencial que surja del uso o la imposibilidad de uso del juego.</li>
+          </ul>
+        </div>
+        <input type="checkbox" id="acceptTermsCheckbox">
+        <label for="acceptTermsCheckbox">Al hacer clic en 'Aceptar', manifiesto haber revisado minuciosamente y estar de acuerdo en todos los aspectos con los términos y condiciones del juego.✅</label>
+      `,
+      customClass: {
+        popup: 'my-custom-popup-class',
+        title: 'my-custom-title-class',
+        content: 'my-custom-content-class',
+        confirmButton: 'my-custom-confirm-button-class',
+        cancelButton: 'my-custom-cancel-button-class'
+      },
+      didOpen: () => {
+        // Agregar eventos de clic a cada título para mostrar u ocultar el contenido correspondiente
+        $('.titulo-terminos').on('click', function() {
+          const index = $(this).data('index');
+          const contenido = $(this).next('.contenido-terminos');
+          contenido.slideToggle();
+        });
+
+        // Agregar evento de clic al botón de verificación de aceptación de términos y condiciones
+        $('#acceptTermsCheckbox').on('click', function() {
+          const isChecked = $(this).is(':checked');
+          const confirmButton = Swal.getConfirmButton();
+          confirmButton.disabled = !isChecked;
+        });
+      }
+    }).then((result) => {
+      if (result.isConfirmed && $('#acceptTermsCheckbox').is(':checked')) {
+        // Mostrar alerta de cómo jugar
+        obtenerGeneroYMostrarAlerta(result.value);
+      } else {
+        // Mostrar la alerta de bienvenida nuevamente si el usuario no acepta los términos y condiciones
+        mostrarAlertaBienvenida();
+      }
+    });
+  }
+
+  // Función para obtener el género del usuario y mostrar la alerta de cómo jugar
+  function obtenerGeneroYMostrarAlerta(nombreUsuario) {
+    // Llamar a la API de nombres para obtener información sobre el género
+    $.ajax({
+      url: 'https://api.genderize.io',
+      method: 'GET',
+      data: {
+        name: nombreUsuario
+      },
+      success: function(response) {
+        const genero = response.gender;
+        mostrarAlertaComoJugar(nombreUsuario, genero);
+      },
+      error: function() {
+        // Si hay un error al llamar a la API, mostrar la alerta de cómo jugar sin el género
+        mostrarAlertaComoJugar(nombreUsuario, null);
+      }
+    });
+  }
+
+  // Función para mostrar la alerta de cómo jugar
+  function mostrarAlertaComoJugar(nombreUsuario, genero) {
+    // Determinar el saludo basado en el género o utilizar un saludo predeterminado
+    let saludo = 'Hola, Querido';
+    if (genero === 'female') {
+      saludo = 'Hola, Querida';
+    }
+    // Mostrar la alerta de cómo jugar con el saludo personalizado
+    Swal.fire({
+      title: `${saludo}${nombreUsuario ? `, ${nombreUsuario}` : ''}!`,
+      text: 'No sabes cómo jugar el Juego de Tetris. No te preocupes, aquí te enseñamos cómo.',
+      html: `
+        <div style="text-align: left;">
+         <p>Creado por Andrés Álvarez Programmer</p>
+          <p>¡Disfruta del juego de Tetris y diviértete! 🎉</p>
+          <p>Aquí tienes algunas instrucciones para jugar:</p>
+          <ul style="list-style-type: circle; padding-left: 20px;">
+            <li><i class="fas fa-arrow-up"></i> - Rotar la pieza</li>
+            <li><i class="fas fa-arrow-left"></i> - Mover la pieza hacia la izquierda</li>
+            <li><i class="fas fa-arrow-right"></i> - Mover la pieza hacia la derecha</li>
+            <li><i class="fas fa-arrow-down"></i> - Bajar la pieza más rápido</li>
+          </ul>
+          <p>El objetivo del juego es completar líneas horizontales con las piezas de Tetris, evitando que las piezas alcancen la parte superior de la pantalla.</p>
+          <p> No olvides revisar los términos y condiciones del juego antes de empezar a jugar.</p>
+                 </div>
+      `,
+      icon: 'success',
+      confirmButtonText: 'Aceptar'
+    });
+  }
+
+  // Llamar a la función para mostrar la alerta de bienvenida y términos y condiciones
+  mostrarAlertaBienvenida();
+});
+
+
+
+
+
+
+
+   
+  class Position {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
+class Block {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+
+    let block = document.createElement("div");
+    block.setAttribute("class", "block");
+    $(block).append(
+      "<div class='inner-tile'><div class='inner-inner-tile'></div></div>"
+    );
+    this.element = block;
+  }
+
+  init() {
+    $("#board").append(this.element);
+  }
+
+  render() {
+    $(this.element).css({
+      left: this.y * $(this.element).innerWidth() + "px",
+      top: this.x * $(this.element).innerHeight() + "px"
+    });
+  }
+
+  fall() {
+    this.x += 1;
+  }
+
+  moveRight() {
+    this.y += 1;
+  }
+
+  moveLeft() {
+    this.y -= 1;
+  }
+
+  rightPosition() {
+    return new Position(this.x, this.y + 1);
+  }
+
+  leftPosition() {
+    return new Position(this.x, this.y - 1);
+  }
+
+  getPosition() {
+    return new Position(this.x, this.y);
+  }
+
+  flash() {
+    return window.animatelo.flash(this.element, {
+      duration: 500
+    });
+  }
+
+  destroy() {
+    $(this.element).remove();
+  }
+}
+
+class Shape {
+  constructor(blocks) {
+    this.blocks = blocks;
+  }
+
+  getBlocks() {
+    return Array.from(this.blocks);
+  }
+
+  init() {
+    for (let block of this.blocks) {
+      block.init();
+    }
+  }
+
+  render() {
+    for (let block of this.blocks) {
+      block.render();
+    }
+  }
+
+  fallingPositions() {
+    return this.blocks
+      .map(b => b.getPosition())
+      .map(p => new Position(p.x + 1, p.y));
+  }
+
+  fall() {
+    for (let block of this.blocks) {
+      block.fall();
+    }
+  }
+
+  rightPositions() {
+    return this.blocks.map(b => b.rightPosition());
+  }
+
+  leftPositions() {
+    return this.blocks.map(b => b.leftPosition());
+  }
+
+  moveRight() {
+    for (let block of this.blocks) {
+      block.moveRight();
+    }
+  }
+
+  moveLeft() {
+    for (let block of this.blocks) {
+      block.moveLeft();
+    }
+  }
+
+  clear() {
+    for (let block of this.blocks) {
+      block.destroy();
+    }
+    this.blocks = [];
+  }
+
+  addBlocks(blocks) {
+    for (let block of blocks) {
+      this.blocks.push(block);
+    }
+  }
+
+  rotate() {
+    //do nothing
+  }
+
+  rotatePositions() {
+    //do nothing
+  }
+}
+
+class Square extends Shape {
+  constructor(x, y) {
+    let blocks = [];
+    blocks.push(new Block(x, y));
+    blocks.push(new Block(x, y + 1));
+    blocks.push(new Block(x + 1, y));
+    blocks.push(new Block(x + 1, y + 1));
+    super(blocks);
+  }
+}
+
+class LShape extends Shape {
+  constructor(x, y) {
+    let blocks = [];
+    blocks.push(new Block(x, y));
+    blocks.push(new Block(x - 1, y));
+    blocks.push(new Block(x + 1, y));
+    blocks.push(new Block(x + 1, y + 1));
+    super(blocks);
+    this.position = 0;
+  }
+
+  rotate() {
+    let blocks = this.rotatePositions().map(p => new Block(p.x, p.y));
+    this.clear();
+    this.addBlocks(blocks);
+    this.position = this.getNextPosition();
+  }
+
+  rotatePositions() {
+    let pos = this.getBlocks()
+      .shift()
+      .getPosition();
+    let x = pos.x;
+    let y = pos.y;
+    let positions = [];
+    switch (this.getNextPosition()) {
+      case 0:
+        {
+          positions.push(new Position(x, y));
+          positions.push(new Position(x - 1, y));
+          positions.push(new Position(x + 1, y));
+          positions.push(new Position(x + 1, y + 1));
+        }
+        break;
+      case 1:
+        {
+          positions.push(new Position(x, y));
+          positions.push(new Position(x, y - 1));
+          positions.push(new Position(x, y + 1));
+          positions.push(new Position(x + 1, y - 1));
+        }
+        break;
+      case 2:
+        {
+          positions.push(new Position(x, y));
+          positions.push(new Position(x - 1, y - 1));
+          positions.push(new Position(x - 1, y));
+          positions.push(new Position(x + 1, y));
+        }
+        break;
+      case 3:
+        {
+          positions.push(new Position(x, y));
+          positions.push(new Position(x, y - 1));
+          positions.push(new Position(x, y + 1));
+          positions.push(new Position(x - 1, y + 1));
+        }
+        break;
+    }
+    return positions;
+  }
+
+  getNextPosition() {
+    return (this.position + 1) % 4;
+  }
+}
+
+class TShape extends Shape {
+  constructor(x, y) {
+    let blocks = [];
+    blocks.push(new Block(x, y));
+    blocks.push(new Block(x, y - 1));
+    blocks.push(new Block(x + 1, y));
+    blocks.push(new Block(x, y + 1));
+    super(blocks);
+    this.position = 0;
+  }
+
+  rotate() {
+    let blocks = this.rotatePositions().map(p => new Block(p.x, p.y));
+    this.clear();
+    this.addBlocks(blocks);
+    this.position = this.getNextPosition();
+  }
+
+  rotatePositions() {
+    let pos = this.getBlocks()
+      .shift()
+      .getPosition();
+    let x = pos.x;
+    let y = pos.y;
+    let positions = [];
+    switch (this.getNextPosition()) {
+      case 0:
+        {
+          positions.push(new Position(x, y));
+          positions.push(new Position(x, y - 1));
+          positions.push(new Position(x + 1, y));
+          positions.push(new Position(x, y + 1));
+        }
+        break;
+      case 1:
+        {
+          positions.push(new Position(x, y));
+          positions.push(new Position(x - 1, y));
+          positions.push(new Position(x, y - 1));
+          positions.push(new Position(x + 1, y));
+        }
+        break;
+      case 2:
+        {
+          positions.push(new Position(x, y));
+          positions.push(new Position(x, y - 1));
+          positions.push(new Position(x - 1, y));
+          positions.push(new Position(x, y + 1));
+        }
+        break;
+      case 3:
+        {
+          positions.push(new Position(x, y));
+          positions.push(new Position(x - 1, y));
+          positions.push(new Position(x, y + 1));
+          positions.push(new Position(x + 1, y));
+        }
+        break;
+    }
+    return positions;
+  }
+
+  getNextPosition() {
+    return (this.position + 1) % 4;
+  }
+}
+
+class ZShape extends Shape {
+  constructor(x, y) {
+    let blocks = [];
+    blocks.push(new Block(x, y));
+    blocks.push(new Block(x, y - 1));
+    blocks.push(new Block(x + 1, y));
+    blocks.push(new Block(x + 1, y + 1));
+    super(blocks);
+    this.position = 0;
+  }
+
+  rotate() {
+    let blocks = this.rotatePositions().map(p => new Block(p.x, p.y));
+    this.clear();
+    this.addBlocks(blocks);
+    this.position = this.getNextPosition();
+  }
+
+  rotatePositions() {
+    let pos = this.getBlocks()
+      .shift()
+      .getPosition();
+    let x = pos.x;
+    let y = pos.y;
+    let positions = [];
+    switch (this.getNextPosition()) {
+      case 0:
+        {
+          positions.push(new Position(x, y));
+          positions.push(new Position(x, y - 1));
+          positions.push(new Position(x + 1, y));
+          positions.push(new Position(x + 1, y + 1));
+        }
+        break;
+      case 1:
+        {
+          positions.push(new Position(x, y));
+          positions.push(new Position(x - 1, y));
+          positions.push(new Position(x, y - 1));
+          positions.push(new Position(x + 1, y - 1));
+        }
+        break;
+    }
+    return positions;
+  }
+
+  getNextPosition() {
+    return (this.position + 1) % 2;
+  }
+}
+
+class Line extends Shape {
+  constructor(x, y) {
+    let blocks = [];
+    blocks.push(new Block(x, y));
+    blocks.push(new Block(x - 1, y));
+    blocks.push(new Block(x + 1, y));
+    blocks.push(new Block(x + 2, y));
+    super(blocks);
+    this.position = 0;
+  }
+
+  rotate() {
+    let blocks = this.rotatePositions().map(p => new Block(p.x, p.y));
+    this.clear();
+    this.addBlocks(blocks);
+    this.position = this.getNextPosition();
+  }
+
+  rotatePositions() {
+    let pos = this.getBlocks()
+      .shift()
+      .getPosition();
+    let x = pos.x;
+    let y = pos.y;
+    let positions = [];
+    switch (this.getNextPosition()) {
+      case 0:
+        {
+          positions.push(new Position(x, y));
+          positions.push(new Position(x - 1, y));
+          positions.push(new Position(x + 1, y));
+          positions.push(new Position(x + 2, y));
+        }
+        break;
+      case 1:
+        {
+          positions.push(new Position(x, y));
+          positions.push(new Position(x, y - 1));
+          positions.push(new Position(x, y + 1));
+          positions.push(new Position(x, y + 2));
+        }
+        break;
+    }
+    return positions;
+  }
+
+  getNextPosition() {
+    return (this.position + 1) % 2;
+  }
+}
+
+class Board {
+  constructor() {
+    this.blocks = [];
+    this.shapes = [];
+    this.interval = undefined;
+    this.loopInterval = 1000;
+    this.gameOver = true;
+    this.loopIntervalFast = parseInt(1000 / 27);
+    this.init();
+    this.score = 0;
+  }
+
+  setScore(value) {
+    this.score = value;
+    $("#score").text(this.score);
+  }
+
+  getScore() {
+    return this.score;
+  }
+
+  init() {
+    $(".empty").each(function(index, ele) {
+      let x = parseInt(index / 10);
+      let y = index % 10;
+      $(ele).css({
+        left: y * $(ele).innerWidth() + "px",
+        top: x * $(ele).innerHeight() + "px"
+      });
+    });
+    $("#message").text("Tetris");
+    window.animatelo.flash("#new-game", {
+      duration: 2500,
+      iterations: Infinity
+    });
+  }
+
+  newGame() {
+    for (let shape of this.shapes) {
+      this.removeShape(shape);
+      this.addBlocks(shape.getBlocks());
+    }
+    for (let block of this.blocks) {
+      block.destroy();
+    }
+    this.blocks = [];
+    this.gameOver = false;
+    this.initGameLoop(this.loopInterval);
+    this.setScore(0);
+    $("#banner").hide();
+  }
+
+  initGameLoop(value) {
+    if (this.interval) {
+      clearInterval(this.interval);
+    }
+    let ref = this;
+    this.interval = setInterval(function() {
+      ref.gameLoop();
+    }, value);
+  }
+
+  gameLoop() {
+    this.renderShapes();
+    this.renderBlocks();
+    this.spawnShapes();
+    this.gameUpdate();
+    //console.log("Shapes Length:" + this.shapes.length);
+    //console.log("Blocks Length:" + this.blocks.length);
+  }
+
+  gameUpdate() {
+    if (this.isGameOver()) {
+      this.gameOver = true;
+      if (this.interval) {
+        clearInterval(this.interval);
+        this.interval = undefined;
+      }
+      $("#banner").show();
+      $("#message").text("Perdiste 😞!");
+      $("#new-game").text("Pulsa aquí para empezar de nuevo!");
+    }
+  }
+
+  isGameOver() {
+    for (let block of this.blocks) {
+      let pos = block.getPosition();
+      if (pos.x === 0 && pos.y === 4) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  renderShapes() {
+    for (let shape of this.getShapes()) {
+        if (
+            this.arePositonsWithinBoard(shape.fallingPositions()) &&
+            this.areBlocksEmpty(shape.fallingPositions())
+        ) {
+            shape.fall();
+            shape.render();
+        } else {
+            this.removeShape(shape);
+            this.addBlocks(shape.getBlocks());
+            if (this.moveFast) {
+                this.initGameLoop(this.loopInterval);
+                this.moveFast = false;
+            }
+        }
+    }
+}
+
+
+  dropShape() {
+    if (!this.gameOver) {
+      this.initGameLoop(this.loopIntervalFast);
+      this.moveFast = true;
+    }
+  }
+
+  renderBlocks() {
+    for (let x = 0; x < 16; x++) {
+      let blocks = [];
+      for (let y = 0; y < 10; y++) {
+        let block = this.getBlock(x, y);
+        if (!block) {
+          break;
+        }
+        blocks.push(block);
+      }
+      if (blocks.length == 10) {
+        let ref = this;
+        this.removeBlocks(blocks);
+        this.flashBlocks(blocks, function() {
+          ref.destroyBlocks(blocks);
+          ref.fallBlocks(x);
+          ref.setScore(ref.getScore() + 25);
+        });
+      }
+    }
+  }
+
+  flashBlocks(blocks, callback) {
+    let anim = null;
+    for (let block of blocks) {
+      anim = block.flash();
+    }
+    anim[0].onfinish = callback;
+  }
+
+  fallBlocks(i) {
+    for (let x = 0; x < i; x++) {
+      for (let y = 0; y < 10; y++) {
+        let block = this.getBlock(x, y);
+        if (block) {
+          block.fall();
+          block.render();
+        }
+      }
+    }
+  }
+
+  removeBlocks(blocks) {
+    for (let block of blocks) {
+      this.blocks.splice(this.blocks.indexOf(block), 1);
+    }
+  }
+
+  destroyBlocks(blocks) {
+    for (let block of blocks) {
+      block.destroy();
+    }
+  }
+
+  getBlock(x, y) {
+    for (let block of this.blocks) {
+      if (block.x == x && block.y == y) {
+        return block;
+      }
+    }
+    return undefined;
+  }
+
+  spawnShapes() {
+    if (this.shapes.length == 0) {
+      let shape = null;
+
+      switch (this.getRandomRange(0, 4)) {
+        case 0:
+          {
+            shape = new Line(0, 4);
+          }
+          break;
+        case 1:
+          {
+            shape = new Square(0, 4);
+          }
+          break;
+        case 2:
+          {
+            shape = new LShape(0, 4);
+          }
+          break;
+        case 3:
+          {
+            shape = new ZShape(0, 4);
+          }
+          break;
+        case 4:
+          {
+            shape = new TShape(0, 4);
+          }
+          break;
+      }
+
+      shape.init();
+      shape.render();
+      this.shapes.push(shape);
+    }
+  }
+
+  getShapes() {
+    return Array.from(this.shapes);
+  }
+
+  removeShape(shape) {
+    this.shapes.splice(this.shapes.indexOf(shape), 1);
+  }
+
+  addBlocks(blocks) {
+    for (let block of blocks) {
+      this.blocks.push(block);
+    }
+  }
+
+  arePositonsWithinBoard(positions) {
+    for (let position of positions) {
+      if (position.x >= 16 || position.y < 0 || position.y >= 10) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  areBlocksEmpty(positions) {
+    for (let position of positions) {
+      for (let block of this.blocks) {
+        let pos = block.getPosition();
+        if (pos.x == position.x && pos.y == position.y) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  leftKeyPress() {
+    for (let shape of this.shapes) {
+      if (
+        this.arePositonsWithinBoard(shape.leftPositions()) &&
+        this.areBlocksEmpty(shape.leftPositions())
+      ) {
+        shape.moveLeft();
+        shape.render();
+      }
+    }
+  }
+
+  rotate() {
+    for (let shape of this.shapes) {
+      if (
+        this.arePositonsWithinBoard(shape.rotatePositions()) &&
+        this.areBlocksEmpty(shape.rotatePositions())
+      )
+        shape.rotate();
+      shape.init();
+      shape.render();
+    }
+  }
+
+  rightKeyPress() {
+    for (let shape of this.shapes) {
+      if (
+        this.arePositonsWithinBoard(shape.rightPositions()) &&
+        this.areBlocksEmpty(shape.rightPositions())
+      ) {
+        shape.moveRight();
+        shape.render();
+      }
+    }
+  }
+
+  upKeyPress() {
+    this.rotate();
+  }
+
+  downKeyPress() {
+    this.dropShape();
+  }
+
+  getRandomRange(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+}
+
+let board = new Board();
+
+$(document).keydown(function(e) {
+  switch (e.which) {
+    case 37: // left
+      board.leftKeyPress();
+      break;
+
+    case 38: // up
+      board.upKeyPress();
+      break;
+
+    case 39: // right
+      board.rightKeyPress();
+      break;
+
+    case 40: // down
+      board.downKeyPress();
+      break;
+
+    case 78: // n
+      board.newGame();
+      break;
+
+    default:
+      console.log(e.which);
+      break; // exit this handler for other keys
+  }
+  e.preventDefault(); // prevent the default action (scroll / move caret)
+});
+
+$("#new-game").click(function() {
+  board.newGame();
+});
+
+$("#down").click(function() {
+  board.downKeyPress();
+});
+
+$("#rotate").click(function() {
+  board.upKeyPress();
+});
+
+$("#left").click(function() {
+  board.leftKeyPress();
+});
+
+$("#right").click(function() {
+  board.rightKeyPress();
+});
+  
+  </script>
+</body>
+</html>
+
+
